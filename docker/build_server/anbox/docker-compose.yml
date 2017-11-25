@@ -1,0 +1,7 @@
+version: '3.2'
+services:
+    anbox:
+        build: .
+        container_name: anbox-container
+        privileged: true
+

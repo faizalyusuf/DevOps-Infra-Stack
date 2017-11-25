@@ -1,0 +1,69 @@
+version: '2'
+services:
+  postgresql:
+    image: 172.29.226.213:18074/postgres:9.5.2
+    container_name: postgresql
+    ports:
+     - 5432:5432
+    environment:
+     - POSTGRES_DB=artifactory
+     # The following must match the DB_USER and DB_PASSWORD values passed to Artifactory
+     - POSTGRES_USER=artifactory
+     - POSTGRES_PASSWORD=password
+     - POSTGRES_DB1=sonar
+     - POSTGRES_USER1=sonar
+     - POSTGRES_PASSWORD1=password1
+    volumes:
+     - /data/postgresql:/var/lib/postgresql/data
+     - /data/sonarqube/:/var/lib/postgresql
+    restart: always
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 32000
+        hard: 40000
+  artifactory:
+    image: 172.29.226.213:18074/artifactory-oss:5.4.6
+    container_name: artifactory
+    ports:
+     - 8081:8081
+    depends_on:
+     - postgresql
+    links:
+     - postgresql
+    volumes:
+     - /data/artifactory:/var/opt/jfrog/artifactory
+    environment:
+     - DB_TYPE=postgresql
+     # The following must match the POSTGRES_USER and POSTGRES_PASSWORD values passed to PostgreSQL
+     - DB_USER=artifactory
+     - DB_PASSWORD=password
+     # Add extra Java options by uncommenting the following line
+     #- EXTRA_JAVA_OPTIONS=-Xmx4g
+    restart: always
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 32000
+        hard: 40000
+  sonarqube:
+    image: 172.29.226.213:18074/sonarqube:lts-alpine
+    container_name: sonarqube
+    ports:
+     - 9000:9000
+    depends_on:
+     - postgresql
+    links:
+     - postgresql
+    environment:
+     - DB_USER=sonar
+     - DB_PASS=password1
+     - DB_NAME=sonar
+#  jenkins:
+#    image: jenkins:2.60.3
+#    container_name: jenkins
+#    ports:
+#     - 8080:8080
+#   volumes:
+#     - /var/run/docker.sock:/var/run/docker.sock
+#     - /git-projects/jenkins-config:/var/jenkins_home

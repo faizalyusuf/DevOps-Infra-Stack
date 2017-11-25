@@ -1,0 +1,36 @@
+---
+- docker_service:
+    project_src: "{{ git_folder }}/digibank-poc/docker/monitor_server"
+    state: absent
+  environment:
+      PYTHONPATH: "{{virtualenv_path}}/lib/python2.7/site-packages/"
+
+# - docker_service:
+#     project_src: "{{ git_folder }}/digibank-poc/poc"
+#     state: present
+#   environment:
+#     DOCKER_MOUNT: "{{mount_volume_path}}"
+#   register: output
+
+- docker_service:
+    project_src: "{{ git_folder }}/digibank-poc/docker/monitor_server"
+    state: present
+
+#- docker_service:
+#    project_name: devops-stack
+#    definition:
+#      version: '3.2'
+#      services:
+#        jenkins-fastlane:
+#          build: "{{ git_folder }}/digibank-poc/docker/jenkins"
+#          container_name: jenkins-fastlane
+#          ports:
+#            - "8080:8080"
+#          volumes:
+#            - "{{ git_folder }}/jenkins-config/jenkins_home:/var/jenkins_home"
+#            - /var/run/docker.sock:/var/run/docker.sock
+#  register: output
+
+# - assert:
+#     that:
+#       - "jenkins-fastlane.devops-stack_jenkins-fastlane_1.state.running"

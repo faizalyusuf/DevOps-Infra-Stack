@@ -1,0 +1,22 @@
+version: '3.2'
+services:
+    jenkins-fastlane:
+        build: jenkins
+        container_name: jenkins-fastlane
+        ports:
+            - "${JENKINS_PORT}:8080"
+        volumes:
+            - ${GIT_FOLDER}/jenkins-config/jenkins_home:/var/jenkins_home
+            - ${GIT_FOLDER}/system-images:/opt/android-sdk-linux/system-images
+            - /usr/boot:/boot
+        #devices:
+        #    - "/dev/kvm"
+        environment:
+            - http_proxy=${http_proxy}
+            - https_proxy=${https_proxy}
+    sonarqube:
+        build: sonarqube
+        container_name: sonarqube
+        ports:
+            - "${SONARQUBE_PORT}:9000"
+            - "9092:9092"

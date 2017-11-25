@@ -1,0 +1,52 @@
+---
+- docker_service:
+    project_src: "{{ git_folder }}/digibank-poc/docker/build_server"
+    state: absent
+  environment:
+    GIT_FOLDER: "{{git_folder}}"
+    JENKINS_PORT: "{{jenkins_port}}"
+    SONARQUBE_PORT: "{{sonarqube_port}}"
+
+#- docker_service:
+#    project_src: "{{ git_folder }}/digibank-poc/poc"
+#    state: present
+#  environment:
+#    DOCKER_MOUNT: "{{mount_volume_path}}"
+#  register: output
+
+- name: Run Jenkins docker compose
+  shell: "cd {{git_folder}}/digibank-poc/docker/build_server && docker-compose up -d"
+  environment:
+    GIT_FOLDER: "{{git_folder}}"
+    JENKINS_PORT: "{{jenkins_port}}"
+    SONARQUBE_PORT: "{{sonarqube_port}}"
+
+- name: Check if firewall-cmd installed
+  shell: command -v firewall-cmd >/dev/null 2>&1
+  register: is_firewall_exist
+
+- name: open firewall rule
+  shell: "firewall-cmd --zone=public --add-port={{jenkins_port}}/tcp --permanent && firewall-cmd --reload"
+  when: is_firewall_exist.rc == 0
+
+# Ansible's docker service is entirely unreliable...
+#- docker_service:
+#    project_name: devops-stack
+#    nocache: yes
+#    definition:
+#      version: '3.2'
+#      services:
+#        jenkins-fastlane:
+#          build: "{{ git_folder }}/digibank-poc/docker/build_server/jenkins"
+#          container_name: jenkins-fastlane
+#          ports:
+#            - "8080:8080"
+#          volumes:
+#            - "{{ git_folder }}/jenkins-config/jenkins_home:/var/jenkins_home"
+#            - /var/run/docker.sock:/var/run/docker.sock
+#  register: output
+
+# - assert:
+#     that:
+#       - "jenkins-fastlane.devops-stack_jenkins-fastlane_1.state.running"
+

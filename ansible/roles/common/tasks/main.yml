@@ -1,0 +1,127 @@
+---
+- name: check path
+  shell: echo $PATH
+  register: PATH
+
+- debug: var=PATH
+
+- name: check virtualenv path
+  debug:
+    msg: "{{ virtualenv_path }}"
+
+- name: check mount path
+  debug:
+    msg: "{{mount_volume_path}}"
+
+- stat:
+    path: "{{ git_folder }}/digibank-poc"
+  register: poc_git_repo
+
+# - name: Get updates for Git repo
+#   git: repo={{ git_repo }} dest={{ git_folder }}/digibank-poc clone=no
+#   when: poc_git_repo.stat.isdir is defined and poc_git_repo.stat.isdir
+
+- git:
+    repo: "{{ digibank_git_repo }}"
+    dest: "{{ git_folder }}/digibank-poc"
+    remote: origin
+    refspec: '+refs/pull/*:refs/heads/*'
+
+- git:
+    repo: "{{ jenkins_git_repo }}"
+    dest: "{{ git_folder }}/jenkins-config"
+    remote: origin
+    refspec: '+refs/pull/*:refs/heads/*'
+    force: yes
+
+- name: download epel release
+  get_url:
+    url: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    dest: /opt/downloads/epel-release-latest-7.noarch.rpm
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: install epel
+  yum:
+     name: /opt/downloads/epel-release-latest-7.noarch.rpm
+     state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: kernel type
+  command: uname -s
+  register: kernel
+
+- name: machine type
+  command: uname -m
+  register: machine
+
+- name: download docker-compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/1.15.0/docker-compose-{{kernel.stdout}}-{{machine.stdout}}"
+    dest: /usr/local/bin/docker-compose
+    mode: 0755
+
+#- name: install pip
+#  package:
+#    name: "{{ item }}"
+#    state: latest
+#  with_items:
+#    - python-pip
+#    - docker-engine
+
+- name: install pip
+  package:
+    name: python-pip
+    state: latest
+
+- name: Upgrade pip
+  pip:
+    name: pip
+    extra_args: --upgrade
+
+#- name: Wheres pip
+#  command: /usr/bin/which pip
+#  register: wherespip
+
+- pip:
+    name: "{{item.name}}"
+    state: present
+  with_items:
+    #- { name: pip, version: "latest", install: true }
+    - { name: virtualenv, version: "latest", install: true }
+
+- name: Manually create the initial virtualenv
+  command: "virtualenv {{virtualenv_path}}"
+  args:
+    creates: "{{virtualenv_path}}"
+
+- pip:
+    name: "{{item.name}}"
+    version: "{{ item.version | default(omit) }}"
+    state: present
+    extra_args: --trusted-host pypi.python.org
+    virtualenv: "{{virtualenv_path}}"
+  with_items:
+    - { name: pip, install: true }
+    - { name: setuptools, install: true }
+    - { name: docker-py, install: true }
+    - { name: docker-compose, version: "1.15.0", install: true }
+
+- name: set ansible_python_interpreter
+  set_fact: ansible_python_interpreter="{{ virtualenv_path }}/bin/python"
+
+# Make sure docker registry is running
+
+# - name: check image existence
+#   uri:
+#     url: "https://{{ docker_registry }}/v1/repositories/{{ docker_image }}/tags/{{ docker_tag }}"
+#     status_code: 200
+#   register: image_status
+
+#- name: Debugging Login
+#  debug:
+#    msg: "{{ image_status }}"
+
+# - name: pull an image
+#   docker_image:
+#     name: ???
+

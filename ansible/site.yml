@@ -1,0 +1,13 @@
+---
+# This playbook deploys the whole application stack in this site.
+
+- name: apply common configuration to all nodes
+  hosts: all
+#  remote_user: michaelhart
+
+  environment:
+    PATH: /usr/local/bin:{{ ansible_env.PATH }}
+
+  roles:
+    - common
+    - devops-stack
