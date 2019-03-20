@@ -1,3 +1,3 @@
 base:
   '*':
-    - docker_image_prune
+    - docker_prune
